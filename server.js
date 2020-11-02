@@ -33,6 +33,18 @@ app.get('/upcoming', (req, res) => {
   .then(data => { res.send(data)});
 })
 
+app.get('/popular', (req, res) => {
+  fetch(`https://api.rawg.io/api/games?key=${api_key}&dates=${threeMonthsAgoString},${currDateString}`, {
+    method: 'GET',
+    headers: { 
+      'Content-Type': 'application/json',
+      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
+    }
+  })
+  .then(jsonData => jsonData.json())
+  .then(data => { console.log(data); res.send(data)});
+})
+
 app.get('/game/:gameId', (req, res) => {
   fetch(`https://api.rawg.io/api/games/${req.params.gameId}?key=${api_key}`, {
     method: 'GET',
