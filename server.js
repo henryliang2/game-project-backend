@@ -4,12 +4,86 @@ const cors = require('cors');
 const app = express();
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
-require('dotenv').config()
+require('dotenv').config();
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const User = require('./models/User.js');
+const passport = require('passport');
+const cookieParser = require('cookie-parser');
+const expressSession = require('express-session');
+const PassportConfig = require('./PassportConfig');
 
 const PORT = process.env.PORT || 8080;
 const api_key = process.env.REACT_APP_RAWG_API_KEY;
 
-app.use(cors());
+// Passport Configuration
+
+passport.use(PassportConfig.googleStrategy);
+
+passport.serializeUser((user, done) => {
+  done(null, user.userId);
+});
+
+passport.deserializeUser((id, done) => {
+  User.findOne({userId: id}, (err, user) => done(err, user));
+});
+
+// MongoDB + Mongoose
+
+mongoose.connect(`mongodb+srv://zomgitshenry:${process.env.REACT_APP_MONGODB_KEY}@cluster0.gy4ko.mongodb.net/gameproject?retryWrites=true&w=majority`, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true, 
+    useFindAndModify: false 
+  });
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function() {
+  console.log('MongoDB Connected');
+});
+
+// Middleware
+
+app.use(cookieParser());
+app.use(expressSession({ 
+  resave: true,
+  saveUninitialized: true,
+  secret: process.env.REACT_APP_SESSION_SECRET,
+  cookie: {
+    sameSite: 'lax' // change to { sameSite: 'none', secure: true } before deployment
+  }
+}))
+app.use(passport.initialize());
+app.use(passport.session())
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors({
+  origin: "http://localhost:3000",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+}));
+app.use(express.static('public'));
+app.enable("trust proxy");
+
+// Passport Routes
+
+app.get('/auth/google', passport.authenticate('google', { 
+  scope: ['profile', 'email'],
+  failureRedirect: 'http://localhost:3000' 
+}));
+
+app.get('/auth/google/callback', 
+  passport.authenticate('google', { 
+    successRedirect: 'http://localhost:3000',
+    failureRedirect: 'http://localhost:3000' 
+  }),
+  (req, res) => {
+    res.redirect('/');
+  });
+
+app.get("/auth/logout", (req, res) => {
+  req.logout();
+  res.redirect('http://localhost:3000');
+});
 
 // dates
 const currDate = new Date();
@@ -20,6 +94,11 @@ const threeMonthsAgoString = threeMonthsAgo.toISOString().slice(0, 10);
 let threeMonthsForward = new Date();
 threeMonthsForward.setMonth(currDate.getMonth() + 3);
 const threeMonthsForwardString = threeMonthsForward.toISOString().slice(0, 10);
+
+app.get('/user/sync', (req, res) => {
+  if(!req.user) res.json({});
+  else res.json(req.user);
+})
 
 app.get('/upcoming', (req, res) => {
   fetch(`https://api.rawg.io/api/games?key=${api_key}&dates=${currDateString},${threeMonthsForwardString}`, {
@@ -42,7 +121,7 @@ app.get('/popular', (req, res) => {
     }
   })
   .then(jsonData => jsonData.json())
-  .then(data => { console.log(data); res.send(data)});
+  .then(data => { res.send(data)});
 })
 
 app.get('/game/:gameId', (req, res) => {
