@@ -175,7 +175,10 @@ app.get('/search/:query', (req, res) => {
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
-    const array = data.results;
+    const array = [];
+    data.results.forEach(game => {
+      if(game.background_image) array.push(game);
+    })
     res.send({ array })
   })
 })
