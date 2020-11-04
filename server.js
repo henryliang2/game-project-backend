@@ -100,6 +100,24 @@ app.get('/user/sync', (req, res) => {
   else res.json(req.user);
 })
 
+app.post('/user/update', (req, res) => {
+  User.findOneAndUpdate(
+    { userId: req.user.userId },
+    { $set: { 
+        favourites: req.body.user.favourites,
+        watchlist: req.body.user.watchlist
+      }
+    })
+    .then(() => { 
+      console.log('success')
+      res.send('success')
+    })
+    .catch(() => { 
+      console.log('fail')
+      res.send('fail')
+    })
+})
+
 app.get('/upcoming', (req, res) => {
   fetch(`https://api.rawg.io/api/games?key=${api_key}&dates=${currDateString},${threeMonthsForwardString}`, {
     method: 'GET',
