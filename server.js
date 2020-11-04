@@ -193,9 +193,10 @@ app.get('/search/:query', (req, res) => {
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
+    const maxResults = 18;
     const array = [];
     data.results.forEach(game => {
-      if(game.background_image) array.push(game);
+      if(game.background_image && array.length < maxResults) array.push(game);
     })
     res.send({ array })
   })
