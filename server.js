@@ -183,6 +183,27 @@ app.get('/screenshots/:gameId', (req, res) => {
   })
 })
 
+app.get('/browse/:dates/:ordering', (req, res) => {
+  fetch(`https://api.rawg.io/api/games?dates=${req.params.dates}&ordering=${req.params.ordering}&key=${api_key}`, {
+    method: 'GET',
+    headers: { 
+      'Content-Type': 'application/json',
+      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
+    }
+  })
+  .then(jsonData => jsonData.json())
+  .then(data => { 
+    const maxResults = 18;
+    const array = [];
+    data.results.forEach(game => {
+      if(game.background_image && array.length < maxResults) { 
+        array.push(game) 
+      }
+    })
+    res.send({ array })
+  })
+})
+
 app.get('/search/:query', (req, res) => {
   fetch(`https://api.rawg.io/api/games?search=${req.params.query}&key=${api_key}`, {
     method: 'GET',
@@ -196,7 +217,9 @@ app.get('/search/:query', (req, res) => {
     const maxResults = 18;
     const array = [];
     data.results.forEach(game => {
-      if(game.background_image && array.length < maxResults) array.push(game);
+      if(game.background_image && array.length < maxResults) { 
+        array.push(game) 
+      }
     })
     res.send({ array })
   })
