@@ -2,8 +2,6 @@ const express = require('express');
 const fetch = require('node-fetch')
 const cors = require('cors');
 const app = express();
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
 require('dotenv').config();
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -12,9 +10,16 @@ const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const expressSession = require('express-session');
 const PassportConfig = require('./PassportConfig');
+const Dates = require('./Dates');
+const RouteHandlers = require('./RouteHandlers');
 
+// default variables
 const PORT = process.env.PORT || 8080;
-const api_key = process.env.REACT_APP_RAWG_API_KEY;
+const rawgApiKey = process.env.REACT_APP_RAWG_API_KEY;
+const rawgApiHeaders = { 
+  'Content-Type': 'application/json',
+  'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
+};
 
 // Passport Configuration
 
@@ -85,19 +90,9 @@ app.get("/auth/logout", (req, res) => {
   res.redirect('http://localhost:3000');
 });
 
-// dates
-const currDate = new Date();
-let threeMonthsAgo = new Date();
-threeMonthsAgo.setMonth(currDate.getMonth() - 3);
-const currDateString = currDate.toISOString().slice(0, 10);
-const threeMonthsAgoString = threeMonthsAgo.toISOString().slice(0, 10);
-let threeMonthsForward = new Date();
-threeMonthsForward.setMonth(currDate.getMonth() + 3);
-const threeMonthsForwardString = threeMonthsForward.toISOString().slice(0, 10);
-
 app.get('/user/sync', (req, res) => {
-  if(!req.user) res.json({});
-  else res.json(req.user);
+  if(!req.user) res.send({});
+  else res.send(req.user);
 })
 
 app.post('/user/update', (req, res) => {
@@ -106,25 +101,15 @@ app.post('/user/update', (req, res) => {
     { $set: { 
         favourites: req.body.user.favourites,
         watchlist: req.body.user.watchlist
-      }
-    })
-    .then(() => { 
-      console.log('success')
-      res.send('success')
-    })
-    .catch(() => { 
-      console.log('fail')
-      res.send('fail')
-    })
+      }})
+    .then(() => { res.send('success') })
+    .catch(() => { res.send('fail') })
 })
 
 app.get('/upcoming', (req, res) => {
-  fetch(`https://api.rawg.io/api/games?key=${api_key}&dates=${currDateString},${threeMonthsForwardString}`, {
+  fetch(`https://api.rawg.io/api/games?key=${rawgApiKey}&dates=${Dates.currDateString},${Dates.threeMonthsForwardString}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { res.send(data)})
@@ -132,49 +117,30 @@ app.get('/upcoming', (req, res) => {
 })
 
 app.get('/popular', (req, res) => {
-  fetch(`https://api.rawg.io/api/games?key=${api_key}&dates=${threeMonthsAgoString},${currDateString}`, {
+  fetch(`https://api.rawg.io/api/games?key=${rawgApiKey}&dates=${Dates.threeMonthsAgoString},${Dates.currDateString}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { res.send(data)});
 })
 
 app.get('/game/:gameId', (req, res) => {
-  fetch(`https://api.rawg.io/api/games/${req.params.gameId}?key=${api_key}`, {
+  fetch(`https://api.rawg.io/api/games/${req.params.gameId}?key=${rawgApiKey}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
-    const dom = new JSDOM(data.description);
-    let description = '';
-    const paragraphs = dom.window.document.getElementsByTagName('p');
-    for(let i=0; i < paragraphs.length; i++) {
-      if(paragraphs[i].textContent.length < 12) continue;
-      description += `${paragraphs[i].textContent}. `
-    }
-     description = description.split('..').join('.');
-     if (description.length > 400) description = description.slice(0, 1000) + '...';
-    data.description_string = description;
-    data.stars = Math.round(data.rating * 2) / 2;
-    res.send(data)
+    const returnData = RouteHandlers.handleGame(data);
+    res.send(returnData)
   });
 })
 
 app.get('/screenshots/:gameId', (req, res) => {
-  fetch(`https://api.rawg.io/api/games/${req.params.gameId}/screenshots?key=${api_key}`, {
+  fetch(`https://api.rawg.io/api/games/${req.params.gameId}/screenshots?key=${rawgApiKey}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
@@ -184,43 +150,25 @@ app.get('/screenshots/:gameId', (req, res) => {
 })
 
 app.get('/browse/:dates/:ordering', (req, res) => {
-  fetch(`https://api.rawg.io/api/games?dates=${req.params.dates}&ordering=${req.params.ordering}&key=${api_key}`, {
+  fetch(`https://api.rawg.io/api/games?dates=${req.params.dates}&ordering=${req.params.ordering}&key=${rawgApiKey}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
-    const maxResults = 18;
-    const array = [];
-    data.results.forEach(game => {
-      if(game.background_image && array.length < maxResults) { 
-        array.push(game) 
-      }
-    })
+    const array = RouteHandlers.handleSearchResults(data);
     res.send({ array })
   })
 })
 
 app.get('/search/:query', (req, res) => {
-  fetch(`https://api.rawg.io/api/games?search=${req.params.query}&key=${api_key}`, {
+  fetch(`https://api.rawg.io/api/games?search=${req.params.query}&key=${rawgApiKey}`, {
     method: 'GET',
-    headers: { 
-      'Content-Type': 'application/json',
-      'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
-    }
+    headers: rawgApiHeaders
   })
   .then(jsonData => jsonData.json())
   .then(data => { 
-    const maxResults = 18;
-    const array = [];
-    data.results.forEach(game => {
-      if(game.background_image && array.length < maxResults) { 
-        array.push(game) 
-      }
-    })
+    const array = RouteHandlers.handleSearchResults(data);
     res.send({ array })
   })
 })
