@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 8080;
 const rawgApiKey = process.env.REACT_APP_RAWG_API_KEY;
 const rawgApiHeaders = { 
   'Content-Type': 'application/json',
-  'User-Agent'  : 'Game-Showcase Personal Web Development Portfolio Project'
+  'User-Agent'  : 'Game-Project Personal Web Development Portfolio Project'
 };
 
 // Passport Configuration
