@@ -53,8 +53,9 @@ app.use(expressSession({
   resave: true,
   saveUninitialized: true,
   secret: process.env.REACT_APP_SESSION_SECRET,
-  cookie: {
-    sameSite: 'lax' // change to { sameSite: 'none', secure: true } before deployment
+  cookie: { 
+    sameSite: 'none', 
+    secure: true 
   }
 }))
 app.use(passport.initialize());
@@ -62,7 +63,7 @@ app.use(passport.session())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: "https://gameproject.netlify.app",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 }));
@@ -73,13 +74,13 @@ app.enable("trust proxy");
 
 app.get('/auth/google', passport.authenticate('google', { 
   scope: ['profile', 'email'],
-  failureRedirect: 'http://localhost:3000' 
+  failureRedirect: 'https://gameproject.netlify.app' 
 }));
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    successRedirect: 'http://localhost:3000',
-    failureRedirect: 'http://localhost:3000' 
+    successRedirect: 'https://gameproject.netlify.app',
+    failureRedirect: 'https://gameproject.netlify.app' 
   }),
   (req, res) => {
     res.redirect('/');
@@ -87,7 +88,7 @@ app.get('/auth/google/callback',
 
 app.get("/auth/logout", (req, res) => {
   req.logout();
-  res.redirect('http://localhost:3000');
+  res.redirect('https://gameproject.netlify.app');
 });
 
 app.get('/user/sync', (req, res) => {
