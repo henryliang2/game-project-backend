@@ -15,6 +15,11 @@ const RouteHandlers = require('./RouteHandlers');
 
 // default variables
 const PORT = process.env.PORT || 8080;
+const ORIGIN_URL = ( 
+  process.env.REACT_APP_ENVIRONMENT  === 'development'
+    ? 'http://localhost:3000'
+    : ORIGIN_URL 
+);
 const rawgApiKey = process.env.REACT_APP_RAWG_API_KEY;
 const rawgApiHeaders = { 
   'Content-Type': 'application/json',
@@ -63,7 +68,7 @@ app.use(passport.session())
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors({
-  origin: "https://gameproject.netlify.app",
+  origin: ORIGIN_URL,
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 }));
@@ -74,13 +79,13 @@ app.enable("trust proxy");
 
 app.get('/auth/google', passport.authenticate('google', { 
   scope: ['profile', 'email'],
-  failureRedirect: 'https://gameproject.netlify.app' 
+  failureRedirect: ORIGIN_URL 
 }));
 
 app.get('/auth/google/callback', 
   passport.authenticate('google', { 
-    successRedirect: 'https://gameproject.netlify.app',
-    failureRedirect: 'https://gameproject.netlify.app' 
+    successRedirect: ORIGIN_URL,
+    failureRedirect: ORIGIN_URL 
   }),
   (req, res) => {
     res.redirect('/');
@@ -88,7 +93,7 @@ app.get('/auth/google/callback',
 
 app.get("/auth/logout", (req, res) => {
   req.logout();
-  res.redirect('https://gameproject.netlify.app');
+  res.redirect(ORIGIN_URL);
 });
 
 app.get('/user/sync', (req, res) => {
