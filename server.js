@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 8080;
 const ORIGIN_URL = ( 
   process.env.REACT_APP_ENVIRONMENT  === 'development'
     ? 'http://localhost:3000'
-    : ORIGIN_URL 
+    : 'https://gameproject.netlify.app'
 );
 const rawgApiKey = process.env.REACT_APP_RAWG_API_KEY;
 const rawgApiHeaders = { 
