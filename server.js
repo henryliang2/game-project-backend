@@ -59,8 +59,8 @@ app.use(expressSession({
   saveUninitialized: true,
   secret: process.env.REACT_APP_SESSION_SECRET,
   cookie: { 
-    sameSite: 'none', 
-    secure: true 
+    sameSite: 'none',
+    secure: true
   }
 }))
 app.use(passport.initialize());
@@ -102,14 +102,22 @@ app.get('/user/sync', (req, res) => {
 })
 
 app.post('/user/update', (req, res) => {
+
+  // Sort into alphabetical order
+  const favourites = req.body.user.favourites.sort((a, b) => a.name.localeCompare(b.name));
+  const watchlist = req.body.user.watchlist.sort((a, b) => a.name.localeCompare(b.name));
+
   User.findOneAndUpdate(
     { userId: req.user.userId },
     { $set: { 
-        favourites: req.body.user.favourites,
-        watchlist: req.body.user.watchlist
+        favourites,
+        watchlist
       }})
     .then(() => { res.send('success') })
-    .catch(() => { res.send('fail') })
+    .catch((e) => { 
+      res.send('fail'); 
+      console.log(e) 
+    })
 })
 
 app.get('/upcoming', (req, res) => {
@@ -140,6 +148,18 @@ app.get('/game/:gameId', (req, res) => {
   .then(data => { 
     const returnData = RouteHandlers.handleGame(data);
     res.send(returnData)
+  });
+})
+
+app.get('/game/:gameId/suggested', (req, res) => {
+  fetch(`https://api.rawg.io/api/games/${req.params.gameId}/suggested?key=${rawgApiKey}`, {
+    method: 'GET',
+    headers: rawgApiHeaders
+  })
+  .then(jsonData => jsonData.json())
+  .then(data => { 
+    const array = data.results.slice(0, 6);
+    res.send({ array })
   });
 })
 
@@ -180,5 +200,5 @@ app.get('/search/:query', (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(PORT)
+  console.log('listening on' + PORT);
 })
